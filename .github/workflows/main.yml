@@ -1,0 +1,47 @@
+name: Build and Publish Tarball
+
+on:
+  push:
+    branches:
+      - main   # adjust branch as needed
+  workflow_dispatch: # allow manual run
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x' # or 6.0.x / 7.0.x depending on your project
+
+      # 3. Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore "./WebApplication1/WebApplication1.csproj"
+
+      # 4. Build project
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # 5. Publish Web API
+      - name: Publish WebAPI
+        run: dotnet publish -c Release -o out
+
+      # 6. Package into Tarball
+      - name: Create tarball
+        run: |
+          mkdir artifacts
+          tar -czf artifacts/myapi-${{ github.sha }}.tar.gz -C out .
+
+      # 7. Upload artifact
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: myapi-tarball
+          path: artifacts/myapi-${{ github.sha }}.tar.gz
